@@ -1,114 +1,167 @@
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { LottieLoader } from "three/addons/loaders/LottieLoader.js";
 
 // 静的インポートを使用 - Viteがアセットを適切に扱えるようにする
 import lottieJsonUrl from "./textures/Lottie/24017-lottie-logo-animation.json?url";
-import textureUrl from "./textures/Lottie/uv_grid_directx.jpg";
 
-const Lottie = () => {
+// Three.jsの型定義を明示的に指定
+interface ThreeSceneElements {
+  renderer: THREE.WebGLRenderer;
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  mesh?: THREE.Mesh;
+  lottieTexture?: THREE.Texture;
+  lights: {
+    ambient?: THREE.AmbientLight;
+    directional?: THREE.DirectionalLight;
+    point?: THREE.PointLight;
+  };
+}
+
+const Lottie: React.FC = () => {
+  // コンテナとプログレスの参照を定義
   const containerRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState<number>(0);
 
+  // シーンをセットアップするためのuseEffectフック
   useEffect(() => {
+    // コンテナが存在しない場合は処理を中断
     if (!containerRef.current) return;
 
-    // 既存のcanvasを削除
+    // 既存のcanvasを削除して重複を防ぐ
     while (containerRef.current.firstChild) {
       containerRef.current.removeChild(containerRef.current.firstChild);
     }
 
-    let renderer: THREE.WebGLRenderer,
-      scene: THREE.Scene,
-      camera: THREE.PerspectiveCamera,
-      lottieTexture: any,
-      mesh: THREE.Mesh;
+    // Three.jsのシーン要素を初期化
+    const sceneElements: ThreeSceneElements = {
+      renderer: new THREE.WebGLRenderer({ antialias: true, alpha: true }),
+      scene: new THREE.Scene(),
+      camera: new THREE.PerspectiveCamera(
+        50, // 視野角
+        window.innerWidth / window.innerHeight, // アスペクト比
+        0.1, // 近クリッピングプレーン
+        10 // 遠クリッピングプレーン
+      ),
+      lights: {}, // 照明オブジェクトを初期化
+    };
 
-    // シーンの初期化
-    camera = new THREE.PerspectiveCamera(
-      50,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      10
-    );
-    camera.position.z = 2.5;
+    // カメラの位置を調整
+    sceneElements.camera.position.z = 2.5;
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x111111);
+    // シーンの背景色を設定
+    sceneElements.scene.background = new THREE.Color(0x111111);
 
     // レンダラーの設定
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    containerRef.current.appendChild(renderer.domElement);
+    sceneElements.renderer.setPixelRatio(window.devicePixelRatio);
+    sceneElements.renderer.setSize(window.innerWidth, window.innerHeight);
+    containerRef.current.appendChild(sceneElements.renderer.domElement);
 
-    // 環境マップの設定
+    // 複数の光源を追加して明るさを改善
+    // アンビエントライト: 全体的な柔らかい光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    sceneElements.scene.add(ambientLight);
+    sceneElements.lights.ambient = ambientLight;
+
+    // ディレクショナルライト: 方向性のある強い光
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    sceneElements.scene.add(directionalLight);
+    sceneElements.lights.directional = directionalLight;
+
+    // ポイントライト: 特定の点から放射される光
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(0, 0, 5);
+    sceneElements.scene.add(pointLight);
+    sceneElements.lights.point = pointLight;
+
+    // 環境マップを設定してシーンの照明を調整
     const environment = new RoomEnvironment();
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(environment).texture;
+    const pmremGenerator = new THREE.PMREMGenerator(sceneElements.renderer);
+    sceneElements.scene.environment =
+      pmremGenerator.fromScene(environment).texture;
     pmremGenerator.dispose();
 
-    // テクスチャの読み込み
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load(textureUrl);
-
-    // Lottieローダーの設定
+    // Lottieローダーでアニメーションテクスチャを読み込み
     const lottieLoader = new LottieLoader();
-    lottieLoader.load(lottieJsonUrl, (texture) => {
-      lottieTexture = texture;
-
+    lottieLoader.load(lottieJsonUrl, (lottieTexture) => {
+      // ジオメトリとマテリアルを作成
       const geometry = new THREE.BoxGeometry(1, 1, 1);
       const material = new THREE.MeshStandardMaterial({
-        map: lottieTexture,
-        transparent: true,
-        opacity: 1,
+        map: lottieTexture, // Lottieテクスチャをマッピング
+        transparent: true, // 透明度を有効化
+        opacity: 1, // 完全に不透明
+        roughness: 0.2, // 表面の粗さを調整
+        metalness: 0.5, // 金属感を追加
       });
 
-      mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
+      // メッシュを作成してシーンに追加
+      sceneElements.mesh = new THREE.Mesh(geometry, material);
+      sceneElements.scene.add(sceneElements.mesh);
+      sceneElements.lottieTexture = lottieTexture;
     });
 
     // アニメーションループ
     const animate = (time: number) => {
       requestAnimationFrame(animate);
 
-      if (mesh && lottieTexture) {
-        // メッシュの回転
-        mesh.rotation.x += 0.005;
-        mesh.rotation.y += 0.01;
+      // メッシュとLottieテクスチャが存在する場合のみアニメーション
+      if (sceneElements.mesh && sceneElements.lottieTexture) {
+        // メッシュを緩やかに回転
+        // x軸は遅く、y軸は速く回転させることで、より自然な動きを表現
+        sceneElements.mesh.rotation.x += 0.002; // ゆっくりとした回転
+        sceneElements.mesh.rotation.y += 0.005; // やや速い回転
 
-        // Lottieテクスチャのプログレス更新
+        // プログレスを計算（2秒周期でアニメーション）
         const currentProgress = (time % 2000) / 2000;
         setProgress(currentProgress * 100);
 
-        if (lottieTexture.update) {
-          lottieTexture.update(currentProgress);
+        // Lottieテクスチャのアニメーションを更新
+        if (sceneElements.lottieTexture.onUpdate) {
+          sceneElements.lottieTexture.onUpdate();
         }
       }
 
-      renderer.render(scene, camera);
+      // シーンをレンダリング
+      sceneElements.renderer.render(sceneElements.scene, sceneElements.camera);
     };
 
+    // アニメーションの開始
     animate(0);
 
     // クリーンアップ関数
     return () => {
-      renderer.dispose();
-      scene.clear();
+      sceneElements.renderer.dispose();
+      sceneElements.scene.clear();
     };
-  }, []);
+  }, []); // 依存配列は空（初回レンダー時のみ実行）
 
   return (
     <div>
-      <div ref={containerRef} style={{ width: "100%", height: "100vh" }} />
+      {/* Three.jsキャンバスを表示 */}
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      />
+
+      {/* プログレスバー */}
       <input
         type="range"
         min="0"
         max="100"
         value={progress}
         readOnly
-        style={{ width: "100%", position: "absolute", bottom: "20px" }}
+        style={{
+          width: "100%",
+          position: "absolute",
+          bottom: "20px",
+        }}
       />
     </div>
   );
