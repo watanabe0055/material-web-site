@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { useRaycaster } from "./useRaycaster";
+import { useRaycaster } from "../useRaycaster";
 import RotatingBox from "./RotatingBox";
 import AuroraEffect from "./AuroraEffect";
 
