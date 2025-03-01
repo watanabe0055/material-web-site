@@ -69,6 +69,7 @@ const AuroraEffect = () => {
         left: 0,
         width: "100vw",
         height: "100vh",
+        zIndex: -1, // これで背後に配置
       }}
     />
   );

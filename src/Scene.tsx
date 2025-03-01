@@ -39,6 +39,7 @@ const Scene = () => {
     scene.add(directionalLight);
 
     const controls = new OrbitControls(camera, renderer.domElement);
+    controls.maxDistance = 200;
 
     for (let i = 0; i < 300; i++) {
       const box = new RotatingBox();
@@ -66,7 +67,7 @@ const Scene = () => {
       ref={canvasRef}
       style={{ position: "relative", width: "100vw", height: "100vh" }}
     >
-      {/* <AuroraEffect /> */}
+      <AuroraEffect />
       {/* 他のThree.jsのシーン */}
     </div>
   );
