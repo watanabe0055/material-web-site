@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { useRaycaster } from "./useRaycaster";
 import RotatingBox from "./RotatingBox";
+import AuroraEffect from "./AuroraEffect";
 
 const Scene = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -20,13 +21,15 @@ const Scene = () => {
   );
   const meshList = useRef<THREE.Mesh[]>([]);
 
+  useRaycaster(renderer, camera, meshList.current);
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
     renderer.setSize(window.innerWidth, window.innerHeight);
     canvasRef.current.appendChild(renderer.domElement);
 
-    camera.position.set(0, 0, 50);
+    camera.position.set(0, 0, 150);
 
     const ambientLight = new THREE.AmbientLight(0x333333);
     scene.add(ambientLight);
@@ -43,8 +46,6 @@ const Scene = () => {
       meshList.current.push(box.mesh);
     }
 
-    useRaycaster(renderer, camera, meshList.current, scene);
-
     const animate = () => {
       requestAnimationFrame(animate);
       controls.update();
@@ -60,7 +61,15 @@ const Scene = () => {
     animate();
   }, [camera, renderer, scene]);
 
-  return <div ref={canvasRef} style={{ width: "100vw", height: "100vh" }} />;
+  return (
+    <div
+      ref={canvasRef}
+      style={{ position: "relative", width: "100vw", height: "100vh" }}
+    >
+      {/* <AuroraEffect /> */}
+      {/* 他のThree.jsのシーン */}
+    </div>
+  );
 };
 
 export default Scene;

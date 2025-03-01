@@ -3,14 +3,13 @@ import * as THREE from "three";
 export const useRaycaster = (
   renderer: THREE.WebGLRenderer,
   camera: THREE.Camera,
-  meshList: THREE.Mesh[],
-  scene: THREE.Scene
+  meshList: THREE.Mesh[]
 ) => {
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
-  const blinkingMeshes = new Set<THREE.Mesh>();
+  const originalPositions = new Map<THREE.Mesh, THREE.Vector3>();
 
-  const onClick = (event: MouseEvent) => {
+  const onMouseMove = (event: MouseEvent) => {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -18,24 +17,30 @@ export const useRaycaster = (
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(meshList);
 
-    intersects.forEach((intersect) => {
-      const mesh = intersect.object as THREE.Mesh;
-      if (!blinkingMeshes.has(mesh)) {
-        blinkingMeshes.add(mesh);
-        let visible = true;
-        const interval = setInterval(() => {
-          visible = !visible;
-          mesh.visible = visible;
-        }, 200);
+    meshList.forEach((mesh) => {
+      if (!originalPositions.has(mesh)) {
+        originalPositions.set(mesh, mesh.position.clone());
+      }
+    });
 
-        setTimeout(() => {
-          clearInterval(interval);
-          mesh.visible = true;
-          blinkingMeshes.delete(mesh);
-        }, 2000);
+    meshList.forEach((mesh) => {
+      if (intersects.some((intersect) => intersect.object === mesh)) {
+        const direction = new THREE.Vector3(
+          Math.random() - 0.5,
+          Math.random() - 0.5,
+          Math.random() - 0.5
+        )
+          .normalize()
+          .multiplyScalar(50);
+        mesh.position.add(direction);
+      } else {
+        const originalPos = originalPositions.get(mesh);
+        if (originalPos) {
+          mesh.position.lerp(originalPos, 0.05);
+        }
       }
     });
   };
 
-  renderer.domElement.addEventListener("click", onClick);
+  renderer.domElement.addEventListener("mousemove", onMouseMove);
 };

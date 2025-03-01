@@ -15,9 +15,9 @@ class RotatingBox {
     );
 
     this.mesh.userData.rotationSpeed = {
-      x: Math.random() * 0.02 - 0.01,
-      y: Math.random() * 0.02 - 0.01,
-      z: Math.random() * 0.02 - 0.01,
+      x: Math.random() * 0.05 - 0.01,
+      y: Math.random() * 0.05 - 0.01,
+      z: Math.random() * 0.05 - 0.01,
     };
   }
 }
