@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import * as THREE from "three";
 
+const MAX_RIPPLES = 5;
+
 const RippleEffect = () => {
   useEffect(() => {
     const scene = new THREE.Scene();
@@ -27,18 +29,35 @@ const RippleEffect = () => {
       fragmentShader: `
         varying vec2 vUv;
         uniform float uTime;
-        uniform vec2 uMouse;
+        uniform vec3 uRipples[${MAX_RIPPLES}];
 
         void main() {
-          float dist = length(vUv - uMouse);
-          float wave = sin(15.0 * dist - uTime * 2.0);
-          vec3 color = vec3(0.2, 0.4, 1.0) * (0.5 + 0.5 * wave);
+          vec3 color = vec3(0.0);
+          
+          for (int i = 0; i < ${MAX_RIPPLES}; i++) {
+            vec2 ripplePos = uRipples[i].xy;
+            float startTime = uRipples[i].z;
+            float timeSinceStart = uTime - startTime;
+
+            if (timeSinceStart >= 0.0 && timeSinceStart <= 2.0) {
+              float dist = length(vUv - ripplePos);
+              float wave = sin(15.0 * dist - timeSinceStart * 3.0);
+              float fade = smoothstep(2.0, 0.0, timeSinceStart);
+              color += vec3(0.2, 0.4, 1.0) * (0.5 + 0.5 * wave) * fade;
+            }
+          }
+
           gl_FragColor = vec4(color, 1.0);
         }
       `,
       uniforms: {
         uTime: { value: 0.0 },
-        uMouse: { value: new THREE.Vector2(0.5, 0.5) }, // 初期値は中央
+        uRipples: {
+          value: Array.from(
+            { length: MAX_RIPPLES },
+            () => new THREE.Vector3(0.5, 0.5, -10.0)
+          ),
+        },
       },
     });
 
@@ -54,13 +73,20 @@ const RippleEffect = () => {
     };
     animate();
 
-    // クリックイベントで波紋の位置を変更
-    const onMouseMove = (event: MouseEvent) => {
+    // クリックイベントで新しい波紋を追加
+    const onMouseClick = (event: MouseEvent) => {
       const x = event.clientX / window.innerWidth;
       const y = 1.0 - event.clientY / window.innerHeight; // Y座標を反転
-      material.uniforms.uMouse.value.set(x, y);
+      const time = material.uniforms.uTime.value;
+
+      // 古い波紋を消して、新しい波紋を追加
+      const ripples = material.uniforms.uRipples.value as THREE.Vector3[];
+      ripples.shift(); // 先頭の波紋を削除（最も古いもの）
+      ripples.push(new THREE.Vector3(x, y, time)); // 新しい波紋を追加
+      material.uniforms.uRipples.value = ripples;
     };
-    window.addEventListener("click", onMouseMove);
+
+    window.addEventListener("click", onMouseClick);
 
     const onWindowResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -71,7 +97,7 @@ const RippleEffect = () => {
 
     return () => {
       window.removeEventListener("resize", onWindowResize);
-      window.removeEventListener("click", onMouseMove);
+      window.removeEventListener("click", onMouseClick);
       document.body.removeChild(renderer.domElement);
     };
   }, []);
