@@ -3,6 +3,7 @@ import Scene from "./components/Scene";
 import RippleEffect from "./RippleEffect";
 import SkyBox from "./SkyBox";
 import Lottie from "./Lottie";
+import InstancingScatter from "./InstancingScatter";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/shade" element={<RippleEffect />} />
         <Route path="/skybox" element={<SkyBox />} />
         <Route path="/lottie" element={<Lottie />} />
+        <Route path="/instancingScatter" element={<InstancingScatter />} />
       </Routes>
     </Router>
   );
