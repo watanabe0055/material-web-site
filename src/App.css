@@ -1,0 +1,20 @@
+canvas {
+  width: 100%;
+  height: 100%;
+  background: rgb(240, 207, 221);
+  background: radial-gradient(
+    circle,
+    rgba(240, 207, 221, 1) 11%,
+    rgba(156, 148, 233, 1) 100%
+  );
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.mainContent {
+  position: absolute;
+  top: 47%;
+  left: 16%;
+  translate: transform(-16%, -50%);
+}
