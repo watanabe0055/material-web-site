@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import Stats from "three/examples/jsm/libs/stats.module";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 const InstancingScatter = () => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -64,11 +64,22 @@ const InstancingScatter = () => {
 
       const transform = new THREE.Matrix4()
         .makeRotationX(Math.PI)
-        .multiply(new THREE.Matrix4().makeScale(7, 7, 7));
+        .multiply(new THREE.Matrix4().makeScale(10, 10, 10));
 
       const stemGeometry = stemMeshOriginal.geometry
         .clone()
         .applyMatrix4(transform);
+
+      // 花の色を赤、青、黄色からランダムに設定
+      const flowerColors = [0xff0000, 0x0000ff, 0xffff00]; // 赤、青、黄色の色コード
+
+      // 花の色をランダムに設定
+      const randomColor =
+        flowerColors[Math.floor(Math.random() * flowerColors.length)];
+      const blossomMaterial = new THREE.MeshLambertMaterial({
+        color: randomColor,
+      });
+
       const blossomGeometry = blossomMeshOriginal.geometry
         .clone()
         .applyMatrix4(transform);
@@ -80,7 +91,7 @@ const InstancingScatter = () => {
       );
       blossomMesh = new THREE.InstancedMesh(
         blossomGeometry,
-        blossomMeshOriginal.material,
+        blossomMaterial,
         count
       );
 
@@ -95,7 +106,7 @@ const InstancingScatter = () => {
         scales[i] = scaleCurve(ages[i]);
         sampler.sample(_position, _normal);
         dummy.position.copy(_position);
-        dummy.lookAt(dummy.position.x, dummy.position.y + 1, dummy.position.z);
+        dummy.lookAt(_position.add(_normal)); // 法線方向に向ける
         dummy.scale.set(scales[i], scales[i], scales[i]);
         dummy.updateMatrix();
         stemMesh.setMatrixAt(i, dummy.matrix);
@@ -107,10 +118,11 @@ const InstancingScatter = () => {
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      mountRef.current.appendChild(renderer.domElement);
-
-      stats = new Stats();
-      mountRef.current.appendChild(stats.dom);
+      if (mountRef.current) {
+        mountRef.current.appendChild(renderer.domElement);
+        stats = new Stats();
+        mountRef.current.appendChild(stats.dom);
+      }
 
       window.addEventListener("resize", onResize);
       setIsLoaded(true);
