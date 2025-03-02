@@ -91,7 +91,7 @@ const Lottie: React.FC = () => {
 
     sceneElements.camera.position.set(0, 0, 3);
 
-    sceneElements.scene.background = new THREE.Color(0x000000);
+    sceneElements.scene.background = new THREE.Color(0xffffff); // 背景色
 
     sceneElements.renderer.setPixelRatio(window.devicePixelRatio);
     sceneElements.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -122,14 +122,35 @@ const Lottie: React.FC = () => {
     const lottieLoader = new LottieLoader();
     lottieLoader.load(lottieJsonUrl, (lottieTexture) => {
       const geometry = new RoundedBoxGeometry(1, 1, 1, 8, 0.2); // 角丸を滑らかに
+
+      const baseMaterial = new THREE.MeshStandardMaterial({
+        color: 0x888888, // 裏打ち用のグレー
+        roughness: 0.5,
+        metalness: 0.5,
+      });
+
+      const lottieMaterial = new THREE.MeshStandardMaterial({
+        map: lottieTexture,
+        transparent: true,
+        opacity: 1.0,
+        roughness: 0.5,
+        metalness: 0.5,
+      });
       const material = new THREE.MeshStandardMaterial({
         map: lottieTexture,
-        color: 0x000000, // ベースカラーを黒にして理想に近づける
+        color: 0x888888, // ベースカラーを黒にして理想に近づける
         transparent: true,
         opacity: 1.0, // テクスチャが薄くならないように
-        roughness: 0.1, // 光沢を強調
-        metalness: 0.9, // 金属感を増やして反射を強調
+        roughness: 0.5, // 光沢を強調
+        metalness: 0.5, // 金属感を増やして反射を強調
       });
+
+      // マテリアルを配列として適用
+      sceneElements.mesh = new THREE.Mesh(geometry, [
+        baseMaterial,
+        lottieMaterial,
+      ]);
+      sceneElements.scene.add(sceneElements.mesh);
 
       sceneElements.mesh = new THREE.Mesh(geometry, material);
       sceneElements.scene.add(sceneElements.mesh);
@@ -141,8 +162,8 @@ const Lottie: React.FC = () => {
       requestAnimationFrame(animate);
 
       if (sceneElements.mesh && sceneElements.lottieTexture) {
-        sceneElements.mesh.rotation.x += 0.002;
-        sceneElements.mesh.rotation.y += 0.005;
+        // sceneElements.mesh.rotation.x += 0.002;
+        sceneElements.mesh.rotation.y -= 0.005;
 
         const currentProgress = (time % 2000) / 2000;
         setProgress(currentProgress * 100);
