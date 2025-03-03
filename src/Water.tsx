@@ -88,12 +88,6 @@ const WaterScene: React.FC<WaterSceneProps> = ({ className }) => {
     sky.mieCoefficient.value = 0.005;
     sky.mieDirectionalG.value = 0.8;
 
-    // Environment setup
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const sceneEnv = new THREE.Scene();
-
-    let renderTarget: THREE.WebGLRenderTarget;
-
     const updateSun = () => {
       if (
         !sunRef.current ||
@@ -110,22 +104,19 @@ const WaterScene: React.FC<WaterSceneProps> = ({ className }) => {
 
       skyRef.current.sunPosition.value.copy(sunRef.current);
       waterRef.current.sunDirection.value.copy(sunRef.current).normalize();
-
-      if (renderTarget !== undefined) renderTarget.dispose();
-
-      sceneEnv.add(skyRef.current);
-      renderTarget = pmremGenerator.fromScene(sceneEnv);
-      sceneRef.current.add(skyRef.current);
-
-      sceneRef.current.environment = renderTarget.texture;
     };
 
     // Box mesh
     const geometry = new THREE.BoxGeometry(30, 30, 30);
-    const material = new THREE.MeshStandardMaterial({ roughness: 0 });
+    const material = new THREE.MeshStandardMaterial({
+      roughness: 0,
+    });
     const mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
     boxMeshRef.current = mesh;
+
+    const AmbientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(AmbientLight); //環境光をシーンに追加
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
