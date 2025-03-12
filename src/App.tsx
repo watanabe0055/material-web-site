@@ -5,6 +5,8 @@ import SkyBox from "./SkyBox";
 import Lottie from "./Lottie";
 import InstancingScatter from "./InstancingScatter";
 import Water from "./Water";
+import PointShadow from "./PointShadow";
+import LinkedParticles from "./LinkedParticles";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="/lottie" element={<Lottie />} />
         <Route path="/instancingScatter" element={<InstancingScatter />} />
         <Route path="/water" element={<Water />} />
+        <Route path="/pointShadow" element={<PointShadow />} />
+        <Route path="/linkedParticles" element={<LinkedParticles />} />
       </Routes>
     </Router>
   );
